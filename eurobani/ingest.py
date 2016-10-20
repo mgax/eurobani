@@ -1,6 +1,7 @@
 import csv
 import re
 from datetime import date
+from . import models
 
 def parse_date(text):
     if text.strip() in ['', '-']:
@@ -12,6 +13,19 @@ def parse_money(text):
     if text.strip() in ['', '-']:
         return None
     return float(text.replace(',', ''))
+
+def chunked(iter, chunk_size):
+    try:
+        while True:
+            buffer = []
+            for _ in range(chunk_size):
+                buffer.append(next(iter))
+            yield buffer
+
+    except StopIteration:
+        if buffer:
+            yield buffer
+
 
 def contracts(path):
     def parse(row):
@@ -51,8 +65,11 @@ def contracts(path):
             'prefinance_amortized':        parse_money(row['Prefin Amortiz']),
         }
 
-    with path.open('rt', encoding='utf-8') as f:
+    with path.open('rt', encoding='latin-1') as f:
         reader = csv.DictReader(f)
-        for row in reader:
-            from pprint import pprint; pprint(parse(row))
-            break
+        rows = (models.Contract(data=parse(row)) for row in reader)
+        n = 0
+        for chunk in chunked(rows, 1000):
+            models.Contract.objects.bulk_create(chunk)
+            n += len(chunk)
+            print(n)
