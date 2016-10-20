@@ -13,5 +13,7 @@ class Command(BaseCommand):
     def handle(self, table, path, **options):
         if table == 'contracts':
             ingest.contracts(Path(path))
+        elif table == 'payments':
+            ingest.payments(Path(path))
         else:
             print("Unknown table", table)

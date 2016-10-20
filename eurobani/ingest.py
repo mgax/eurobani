@@ -76,3 +76,32 @@ def contracts(path):
     for chunk in csv_chunked_rows(path):
         rows = [models.Contract(data=parse(row)) for row in chunk]
         models.Contract.objects.bulk_create(rows)
+
+def payments(path):
+    def parse(row):
+        return {
+            'smis':             row['Smis Code'],
+            'beneficiary_code': row['Benef Code'],
+            'beneficiary':      row['Benef Name'],
+            'commitment_type':  row['Commitment Type'],
+            'contract_number':  row['Contr No'],
+            'contract_type':    row['Contr Type Descr'],
+            'contractor':       row['Contractor Name'],
+            'county':           row['Judet Benef'],
+            'locality':         row['Loc Benef'],
+            'procedure':        row['Proced Type Descr'],
+            'region':           row['Regiune Benef'],
+            'status':           row['Status'],
+            'subproject':       row['Subproj'],
+            'title':            row['Title'],
+
+            'start_date': parse_date(row['Start Date']),
+            'end_date':   parse_date(row['End Date']),
+            'seap_date':  parse_date(row['Seap Publish Date']),
+
+            'value': parse_money(row['Contr value']),
+        }
+
+    for chunk in csv_chunked_rows(path):
+        rows = [models.Payment(data=parse(row)) for row in chunk]
+        models.Payment.objects.bulk_create(rows)
