@@ -26,6 +26,14 @@ def chunked(iter, chunk_size):
         if buffer:
             yield buffer
 
+def csv_chunked_rows(path, chunk_size=1000):
+    with path.open('rt', encoding='latin-1') as f:
+        reader = csv.DictReader(f)
+        n = 0
+        for chunk in chunked(reader, chunk_size):
+            yield chunk
+            n += len(chunk)
+            print(n)
 
 def contracts(path):
     def parse(row):
@@ -65,11 +73,6 @@ def contracts(path):
             'prefinance_amortized':        parse_money(row['Prefin Amortiz']),
         }
 
-    with path.open('rt', encoding='latin-1') as f:
-        reader = csv.DictReader(f)
-        rows = (models.Contract(data=parse(row)) for row in reader)
-        n = 0
-        for chunk in chunked(rows, 1000):
-            models.Contract.objects.bulk_create(chunk)
-            n += len(chunk)
-            print(n)
+    for chunk in csv_chunked_rows(path):
+        rows = [models.Contract(data=parse(row)) for row in chunk]
+        models.Contract.objects.bulk_create(rows)
